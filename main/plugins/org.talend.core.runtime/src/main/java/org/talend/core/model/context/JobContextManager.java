@@ -224,13 +224,13 @@ public class JobContextManager implements IContextManager {
             if (oldContextName != null) {
                 if (!oldContextName.equals(contextParameter.getName())) {
                     if (contextParameter.getName().equals(newContextName)
-                            || contextParameter.getName().toLowerCase().equals(newContextName.toLowerCase())) {
+                            || contextParameter.getName().equalsIgnoreCase(newContextName)) {
                         return false;
                     }
                 }
             } else {
                 if (contextParameter.getName().equals(newContextName)
-                        || contextParameter.getName().toLowerCase().equals(newContextName.toLowerCase())) {
+                        || contextParameter.getName().equalsIgnoreCase(newContextName)) {
                     return false;
                 }
             }
@@ -320,7 +320,8 @@ public class JobContextManager implements IContextManager {
                 contextParam = new JobContextParameter();
                 contextParam.setContext(context);
                 contextParam.setName(contextParamType.getName());
-                contextParam.setPrompt(contextParamType.getPrompt());
+                contextParam.setPrompt(
+                        contextParamType.getPrompt() == null ? (contextParamType.getName() + "?") : contextParamType.getPrompt());
                 contextParam.setInternalId(contextParamType.getInternalId());
                 originalParamerters.add(contextParam.getName());
                 boolean exists = true;

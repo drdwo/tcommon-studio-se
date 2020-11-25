@@ -676,8 +676,14 @@ public class DBConnectionFillerImpl extends MetadataFillerImpl<DatabaseConnectio
         String catalogName = getDatabaseName(dbConn);
 
         if (StringUtils.isEmpty(catalogName)) {
+            String url = null;
+            if (metaConnection != null) {
+                url = metaConnection.getUrl();
+            } else {
+                url = dbConn.getURL();
+            }
             // TDQ-16020 msjian: should get the correct catalog name
-            catalogName = getPostgresqlCatalogFromUrl(metaConnection.getUrl(), dbConn.getUsername());
+            catalogName = getPostgresqlCatalogFromUrl(url, dbConn.getUsername());
         }
 
         if (StringUtils.isNotEmpty(catalogName)) {
@@ -743,6 +749,9 @@ public class DBConnectionFillerImpl extends MetadataFillerImpl<DatabaseConnectio
     protected boolean isNullUiSchema(Connection dbConn) {
         if (dbConn instanceof DatabaseConnection) {
             String databaseOnConnWizard = ((DatabaseConnection) dbConn).getUiSchema();
+            if (StringUtils.isEmpty(databaseOnConnWizard)) {
+                return true;
+            }
             String readableName = TalendCWMService.getReadableName(dbConn, databaseOnConnWizard);
             if (StringUtils.isEmpty(databaseOnConnWizard) || StringUtils.isEmpty(readableName)) {
                 return true;
@@ -1526,14 +1535,14 @@ public class DBConnectionFillerImpl extends MetadataFillerImpl<DatabaseConnectio
                     typeName = MetadataToolHelper.validateValueForDBType(typeName);
                     String pattern = null;
                     if (MetadataConnectionUtils.isMssql(dbJDBCMetadata)) {
-                        if (typeName.toLowerCase().equals("date")) { //$NON-NLS-1$
+                        if (typeName.equalsIgnoreCase("date")) { //$NON-NLS-1$
                             dataType = 91;
                             pattern = TalendQuoteUtils.addQuotes("dd-MM-yyyy");
                             // MOD scorreia 2010-07-24 removed the call to column.getSQLDataType() here because
                             // obviously
                             // the sql
                             // data type it is null and results in a NPE
-                        } else if (typeName.toLowerCase().equals("time")) { //$NON-NLS-1$
+                        } else if (typeName.equalsIgnoreCase("time")) { //$NON-NLS-1$
                             dataType = 92;
                             pattern = TalendQuoteUtils.addQuotes("HH:mm:ss");
                             // MOD scorreia 2010-07-24 removed the call to column.getSQLDataType() here because
@@ -1747,19 +1756,19 @@ public class DBConnectionFillerImpl extends MetadataFillerImpl<DatabaseConnectio
                             }
                         }
                         if (MetadataConnectionUtils.isMssql(dbJDBCMetadata)) {
-                            if (typeName.toLowerCase().equals("date")) { //$NON-NLS-1$
+                            if (typeName.equalsIgnoreCase("date")) { //$NON-NLS-1$
                                 dataType = 91;
                                 // MOD scorreia 2010-07-24 removed the call to column.getSQLDataType() here because
                                 // obviously
                                 // the sql
                                 // data type it is null and results in a NPE
-                            } else if (typeName.toLowerCase().equals("time")) { //$NON-NLS-1$
+                            } else if (typeName.equalsIgnoreCase("time")) { //$NON-NLS-1$
                                 dataType = 92;
                                 // MOD scorreia 2010-07-24 removed the call to column.getSQLDataType() here because
                                 // obviously
                                 // the sql
                                 // data type it is null and results in a NPE
-                            } else if (typeName.toLowerCase().equals("datetime2")) { //$NON-NLS-1$
+                            } else if (typeName.equalsIgnoreCase("datetime2")) { //$NON-NLS-1$
                                 dataType = 93;
                             }
                         }

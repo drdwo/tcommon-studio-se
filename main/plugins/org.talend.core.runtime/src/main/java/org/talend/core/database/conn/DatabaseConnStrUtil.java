@@ -130,7 +130,7 @@ public class DatabaseConnStrUtil {
                     s = getStringReplace(s, EDatabaseConnVar.PORT.getVariable(), port, supportContext);
                 }
                 if (EDatabaseConnTemplate.TERADATA.equals(connStr)) {
-                    if (StringUtils.isNotBlank(sid)) {
+                    if (StringUtils.isNotBlank(TalendQuoteUtils.removeQuotesIfExist(sid))) {
                         s = getStringReplace(s, EDatabaseConnVar.SID.getVariable(), DATABASE_STRING + sid, supportContext);
                     } else {
                         s = getStringReplace(s, EDatabaseConnVar.SID.getVariable() + ",", sid, supportContext); //$NON-NLS-1$
@@ -224,6 +224,7 @@ public class DatabaseConnStrUtil {
         if (template.startsWith(DbConnStrForHive.URL_HIVE_2_TEMPLATE)) {
             url = getImpalaURLString(false, server, port, sidOrDatabase, impalaPrincipal);
         }
+        url = attachAdditionalHiveParameters(url, dbConn, false);
         return url;
     }
 

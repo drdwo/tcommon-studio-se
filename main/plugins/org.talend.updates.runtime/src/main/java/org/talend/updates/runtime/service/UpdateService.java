@@ -14,28 +14,31 @@ package org.talend.updates.runtime.service;
 
 import java.io.File;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Set;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
+import org.codehaus.plexus.util.FileUtils;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.runtime.NullProgressMonitor;
+import org.talend.commons.utils.io.FilesUtils;
+import org.talend.commons.utils.resource.FileExtensions;
 import org.talend.core.nexus.ArtifactRepositoryBean;
+import org.talend.core.runtime.util.SharedStudioUtils;
 import org.talend.core.service.IUpdateService;
 import org.talend.updates.runtime.engine.component.InstallComponentMessages;
 import org.talend.updates.runtime.engine.factory.ComponentsLocalNexusInstallFactory;
-import org.talend.updates.runtime.maven.MavenRepoSynchronizer;
 import org.talend.updates.runtime.model.ExtraFeature;
 import org.talend.updates.runtime.model.FeatureCategory;
 import org.talend.updates.runtime.nexus.component.ComponentIndexManager;
 import org.talend.updates.runtime.nexus.component.NexusServerManager;
 import org.talend.updates.runtime.utils.PathUtils;
-import org.talend.utils.io.FilesUtils;
+import org.talend.updates.runtime.utils.UpdateTools;
 
 public class UpdateService implements IUpdateService {
 
     private static Logger log = Logger.getLogger(UpdateService.class);
-
     @Override
     public boolean checkComponentNexusUpdate() {
         IProgressMonitor monitor = new NullProgressMonitor();
@@ -86,17 +89,57 @@ public class UpdateService implements IUpdateService {
     }
 
     @Override
-    public void syncComponentM2Jars(IProgressMonitor monitor) {
-        final File tempM2RepoFolder = PathUtils.getComponentsM2TempFolder();
-        try {
-            if (tempM2RepoFolder != null && tempM2RepoFolder.exists()) {
-                MavenRepoSynchronizer synchronizer = new MavenRepoSynchronizer(tempM2RepoFolder);
-                synchronizer.sync();
+    public boolean syncSharedStudioLibraryInPatch(IProgressMonitor monitor) throws Exception {
+        boolean isNeedRestart = false;
+        if (SharedStudioUtils.isSharedStudioMode()) {
+            File studioPatch = SharedStudioPatchInfoProvider.getInstance().getNeedInstallStudioPatchFiles();
+            if (studioPatch != null && studioPatch.getName().endsWith(FileExtensions.ZIP_FILE_SUFFIX)) {
+                File tmpInstallFolder = File.createTempFile("StudioPatchInstaller", "");
+                if (tmpInstallFolder.exists()) {
+                    tmpInstallFolder.delete();
+                }
+                tmpInstallFolder.mkdirs();
+                FilesUtils.unzip(studioPatch.getAbsolutePath(), tmpInstallFolder.getAbsolutePath());
+                UpdateTools.syncLibraries(tmpInstallFolder);
+                UpdateTools.syncM2Repository(tmpInstallFolder);
+                File carFolder = new File(tmpInstallFolder, ITaCoKitUpdateService.FOLDER_CAR);
+                UpdateTools.deployCars(monitor, carFolder, false);
+                SharedStudioPatchInfoProvider.getInstance().installedStudioPatch(studioPatch.getName());
+                tmpInstallFolder.delete();
+                isNeedRestart = true;
             }
-        } finally {
-            // clean
-            FilesUtils.deleteFolder(tempM2RepoFolder, true);
+            List<File> carFiles = SharedStudioPatchInfoProvider.getInstance().getNeedInstallCarFiles();
+            if (carFiles.size() > 0) {
+                File tmpInstallFolder = File.createTempFile("CarPatchInstaller", "");
+                if (tmpInstallFolder.exists()) {
+                    tmpInstallFolder.delete();
+                }
+                tmpInstallFolder.mkdirs();
+                for (File carFile : carFiles) {
+                    FileUtils.copyFile(carFile, new File (tmpInstallFolder, carFile.getName()));
+                    SharedStudioPatchInfoProvider.getInstance().installedCarPatch(carFile.getName());
+                }
+                UpdateTools.deployCars(monitor, tmpInstallFolder, false);
+                tmpInstallFolder.delete();
+            }
+            if (isNeedRestart) {
+                SharedStudioUtils.updateExtraFeatureFile();
+            }
         }
+        return isNeedRestart;
     }
 
+    @Override
+    public String getSharedStudioMissingPatchVersion() {
+        File patchFolder = PathUtils.getPatchesFolder();
+        String patchFileName = SharedStudioPatchInfoProvider.getInstance().getStudioInstalledLatestPatchFileName();
+        if (patchFileName != null && !SharedStudioPatchInfoProvider.getInstance().isInstalled(patchFileName, SharedStudioPatchInfoProvider.PATCH_TYPE_STUDIO)) {
+            File studioPatchFile = new File (patchFolder, patchFileName);
+            if (studioPatchFile != null && !studioPatchFile.exists()) {
+                return patchFileName;
+            }
+        }
+        return null;
+    }
 }
+

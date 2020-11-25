@@ -220,9 +220,16 @@ public class ModulesNeededProvider {
 
         Set<ModuleNeeded> modulesNeeded = getModulesNeeded();
         for (ModuleNeeded moduleNeeded : modulesNeeded) {
-            if (id.equals(moduleNeeded.getId())) {
-                result = moduleNeeded;
-                break;
+            if (id.startsWith(MavenUrlHelper.MVN_PROTOCOL)) {
+                if (id.equals(moduleNeeded.getMavenUri())) {
+                    result = moduleNeeded;
+                    break;
+                }
+            } else {
+                if (id.equals(moduleNeeded.getId())) {
+                    result = moduleNeeded;
+                    break;
+                }
             }
         }
 
@@ -993,7 +1000,7 @@ public class ModulesNeededProvider {
     public static List<ModuleNeeded> getModulesNeeded(String componentName) {
         List<ModuleNeeded> toReturn = new ArrayList<ModuleNeeded>();
         for (ModuleNeeded current : getModulesNeeded()) {
-            if (current.getContext().equals(componentName)) {
+            if (componentName.equals(current.getContext())) {
                 toReturn.add(current);
             }
         }

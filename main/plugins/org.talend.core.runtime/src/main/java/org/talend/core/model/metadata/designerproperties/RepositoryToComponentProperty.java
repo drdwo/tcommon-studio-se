@@ -813,13 +813,7 @@ public class RepositoryToComponentProperty {
      * @return
      */
     private static Object getMDMValue(MDMConnection connection, String value, IMetadataTable table) {
-        if ("MDM_VERSION".equals(value)) {//$NON-NLS-1$
-            if (connection.getVersion() == null || "".equals(connection.getVersion())) {
-                return MDMVersions.MDM_S56.getKey();
-            } else {
-                return connection.getVersion();
-            }
-        } else if ("MDMURL".equals(value)) { //$NON-NLS-1$
+        if ("MDMURL".equals(value)) { //$NON-NLS-1$
             if (isContextMode(connection, connection.getServerUrl())) {
                 return connection.getServerUrl();
             } else {
@@ -1492,21 +1486,24 @@ public class RepositoryToComponentProperty {
         }
 
         if (value.equals("USE_SSL") && (EDatabaseTypeName.HIVE.getDisplayName().equals(databaseType)
-                || EDatabaseTypeName.ORACLE_CUSTOM.getDisplayName().equals(databaseType))) {
+                || EDatabaseTypeName.ORACLE_CUSTOM.getDisplayName().equals(databaseType)
+                || EDatabaseTypeName.IMPALA.getDisplayName().equals(databaseType))) {
             String message = connection.getParameters().get(ConnParameterKeys.CONN_PARA_KEY_USE_SSL);
             return Boolean.parseBoolean(message);
         }
 
         if ((value.equals("SSL_TRUST_STORE") || value.equals("SSL_TRUSTSERVER_TRUSTSTORE"))
                 && (EDatabaseTypeName.HIVE.getDisplayName().equals(databaseType)
-                || EDatabaseTypeName.ORACLE_CUSTOM.getDisplayName().equals(databaseType))) {
+                        || EDatabaseTypeName.ORACLE_CUSTOM.getDisplayName().equals(databaseType)
+                        || EDatabaseTypeName.IMPALA.getDisplayName().equals(databaseType))) {
             return getAppropriateValue(connection,
                     connection.getParameters().get(ConnParameterKeys.CONN_PARA_KEY_SSL_TRUST_STORE_PATH));
         }
 
         if ((value.equals("SSL_TRUST_STORE_PASSWORD") || value.equals("SSL_TRUSTSERVER_PASSWORD"))
                 && (EDatabaseTypeName.HIVE.getDisplayName().equals(databaseType)
-                || EDatabaseTypeName.ORACLE_CUSTOM.getDisplayName().equals(databaseType))) {
+                        || EDatabaseTypeName.ORACLE_CUSTOM.getDisplayName().equals(databaseType)
+                        || EDatabaseTypeName.IMPALA.getDisplayName().equals(databaseType))) {
             return getAppropriateValue(connection, connection
                     .getValue(connection.getParameters().get(ConnParameterKeys.CONN_PARA_KEY_SSL_TRUST_STORE_PASSWORD), false));
         }
@@ -1752,7 +1749,11 @@ public class RepositoryToComponentProperty {
         if (value.equals("DBTYPE")) {
             String repositoryType = connection.getDatabaseType();
             EDatabaseTypeName typeFromDbType = EDatabaseTypeName.getTypeFromDbType(repositoryType);
-            return typeFromDbType.getXMLType();
+            String type = typeFromDbType.getXMLType();
+            if (databaseType.equals(EDatabaseTypeName.EXASOL.getDisplayName())) {
+                return type.toUpperCase(); // for component
+            }
+            return type;
         }
         if ("IMPALA_ADDITIONAL_JDBC".equals(value)) { //$NON-NLS-1$
             String additionJdbc = connection.getParameters().get(ConnParameterKeys.CONN_PARA_KEY_HIVE_ADDITIONAL_JDBC_SETTINGS);
