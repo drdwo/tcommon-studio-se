@@ -14,12 +14,6 @@
             <groupId>org.talend.ci</groupId>
             <artifactId>osgihelper-maven-plugin</artifactId>
             <version>${project.version}</version>
-            <exclusions>
-				<exclusion>
-					<groupId>commons-codec</groupId>
-					<artifactId>commons-codec</artifactId>
-				</exclusion>
-			</exclusions>
         </dependency>
 		<dependency>
 			<groupId>org.codehaus.plexus</groupId>
