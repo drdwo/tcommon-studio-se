@@ -19,6 +19,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.log4j.Priority;
 import org.eclipse.emf.common.notify.NotificationChain;
 import org.eclipse.emf.common.util.EList;
 import org.eclipse.emf.common.util.URI;
@@ -30,6 +31,7 @@ import org.eclipse.emf.ecore.util.InternalEList;
 import org.eclipse.emf.ecore.util.NotifyingInternalEListImpl;
 import org.eclipse.emf.ecore.xmi.XMLResource;
 import org.eclipse.emf.ecore.xmi.impl.XMLParserPoolImpl;
+import org.talend.commons.exception.ExceptionHandler;
 import org.talend.commons.runtime.model.emf.provider.EmfResourcesFactoryReader;
 
 /**
@@ -138,6 +140,17 @@ public class TalendResourceSet extends ResourceSetImpl {
 
     @Override
     protected void demandLoad(Resource resource) throws IOException {
+        try {
+            if (Boolean.getBoolean("talend.studio.debug.stacktrace.printResourceLoad")) {
+                String name = "";
+                if (resource != null) {
+                    name = resource.toString();
+                }
+                ExceptionHandler.process(new Exception(name), Priority.INFO);
+            }
+        } catch (Exception e) {
+            ExceptionHandler.process(e);
+        }
         final Map<Object, Object> old = new HashMap<Object, Object>(getLoadOptions());
         try {
             Map<String, Object> options = EmfResourcesFactoryReader.INSTANCE.getLoadOptions(resource);
