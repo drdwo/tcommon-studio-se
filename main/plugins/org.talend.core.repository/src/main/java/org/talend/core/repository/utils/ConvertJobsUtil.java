@@ -359,6 +359,8 @@ public class ConvertJobsUtil {
         if (JobBatchFramework.MAPREDUCEFRAMEWORK.getDisplayName().equals(frameworkObj)
                 || JobBatchFramework.SPARKFRAMEWORK.getDisplayName().equals(frameworkObj)) {
             return JobType.BIGDATABATCH.getDisplayName();
+        } else if (JobStreamingFramework.SPARKSTREAMINGFRAMEWORK.getName().equals(frameworkObj)) {
+            return JobType.BIGDATASTREAMING.getDisplayName();
         } else {
             return JobType.STANDARD.getDisplayName();
         }
